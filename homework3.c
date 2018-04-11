@@ -23,10 +23,20 @@ pthread_mutex_t lock;
 
 
 int main(int argc, char* argv[]){
+    int curInt;    
+    pthread_t *rowThread;
+    pthread_t *colThread;
+    pthread_t *gridThread; // use this for grid threads
+    void * rowRes;
+    void *colres;
+    void *gridres; // Use this like rowres and colres
+ 
     FILE * inputFile = fopen(argv[1], "r");
-    int curInt;
-    pthread_mutex_init(&lock, NULL);
     sudokuBoard *newBoard = malloc(sizeof(sudokuBoard));
+
+
+    pthread_mutex_init(&lock, NULL);
+    
     newBoard->result = true;
     newBoard->row = 0;
     newBoard->col = 0;
@@ -44,16 +54,15 @@ int main(int argc, char* argv[]){
         }
     }
 
-   
-    pthread_t *rowThread;
-    pthread_t *colThread;
+
     rowThread = malloc( 9 * sizeof(pthread_t));
     colThread = malloc(9 * sizeof(pthread_t));
+    gridThread = malloc(9 * sizeof(pthread_t));
     
     for(int i = 0; i < 9; i++){
         pthread_create(&rowThread[i], NULL, rowCheck, (void * ) newBoard);
-        // pthread_create(&colThread[i], NULL, colCheck, (void * ) newBoard);
     }
+
     for(int i = 0; i < 9; i++){
         pthread_create(&colThread[i], NULL, colCheck, (void * ) newBoard);
     }
@@ -65,14 +74,17 @@ int main(int argc, char* argv[]){
         }
         printf("\n");
     }
-    void * rowRes;
-    void *colres;
+
     for(int i = 0; i < 9; i++){
         pthread_join(rowThread[i], (void *) &rowRes);
         pthread_join(colThread[i], (void *) &colres);
     }
+    
     if(newBoard->result == false){
         printf("This is not a suduko board.\n");
+    }
+    else{
+        printf("This is a valid sudoku board.\n");
     }
 
     free(rowThread);
@@ -88,7 +100,6 @@ void* rowCheck( void * board ){
     sudokuBoard *rowBoard = (sudokuBoard * ) board;
 
     printf("Entering rowCheck\n");
-    // rowBoard->row += 1;
     pthread_mutex_lock(&lock);
     int rowsum = 0; 
 
@@ -115,13 +126,11 @@ void * colCheck(void * board){
     
     printf("Entering colCheck.\n");
     sudokuBoard *colBoard = (sudokuBoard *) board;
-    // int count = colBoard->col + 1;
-    // colBoard->col += 1;
+
     int colsum = 0;
     pthread_mutex_lock(&lock);
     for(int i = 0; i < 9; i ++){
             colsum = colsum + colBoard->multiArray[i][colBoard->col];
-            // printf("Colsum: %d \n", colsum);
            
            }
      colBoard->col += 1;
@@ -137,4 +146,5 @@ void * colCheck(void * board){
     return (void* )colBoard->result;
         
 }
+
 
