@@ -8,6 +8,7 @@
 typedef struct {
     int col;
     int row;
+    int grid;
     int multiArray[9][9];
     bool result;
 
@@ -19,6 +20,7 @@ pthread_mutex_t lock;
  
  void*  rowCheck(void * board);
  void * colCheck(void * board);
+ void * gridCheck(void * board);
 
 
 
@@ -29,7 +31,7 @@ int main(int argc, char* argv[]){
     pthread_t *gridThread; // use this for grid threads
     void * rowRes;
     void *colres;
-    void *gridres; // Use this like rowres and colres
+    void *gridRes; // Use this like rowres and colres
  
     FILE * inputFile = fopen(argv[1], "r");
     sudokuBoard *newBoard = malloc(sizeof(sudokuBoard));
@@ -40,7 +42,7 @@ int main(int argc, char* argv[]){
     newBoard->result = true;
     newBoard->row = 0;
     newBoard->col = 0;
-   
+    newBoard->grid = 0;
        for(int i = 0; i < 9; i++){
         for (int j = 0; j < 9; j++){
             curInt = fgetc(inputFile); // reading in ascii value
@@ -48,7 +50,7 @@ int main(int argc, char* argv[]){
                 curInt = fgetc(inputFile);
                 
             }
-            curInt -= 48;
+            curInt -= '0';
 
             newBoard->multiArray[i][j] = curInt;
         }
@@ -66,6 +68,13 @@ int main(int argc, char* argv[]){
     for(int i = 0; i < 9; i++){
         pthread_create(&colThread[i], NULL, colCheck, (void * ) newBoard);
     }
+    int count;
+    // for(int i = 0; i < 3; i++){
+    //     for(int j = 0; j < 3; j++){
+    //         pthread_create(&gridThread[count], NULL, gridCheck, (void *) newBoard);
+    //         count += 1;
+    //     }
+    // }
 
     for(int i = 0; i < 9; i++){
         for(int j = 0; j < 9; j++){
@@ -78,6 +87,7 @@ int main(int argc, char* argv[]){
     for(int i = 0; i < 9; i++){
         pthread_join(rowThread[i], (void *) &rowRes);
         pthread_join(colThread[i], (void *) &colres);
+        // pthread_join(gridThread[i], (void *) &gridRes);
     }
     
     if(newBoard->result == false){
@@ -126,9 +136,9 @@ void * colCheck(void * board){
     
     printf("Entering colCheck.\n");
     sudokuBoard *colBoard = (sudokuBoard *) board;
-
+        pthread_mutex_lock(&lock);
     int colsum = 0;
-    pthread_mutex_lock(&lock);
+
     for(int i = 0; i < 9; i ++){
             colsum = colsum + colBoard->multiArray[i][colBoard->col];
            
@@ -145,6 +155,55 @@ void * colCheck(void * board){
     printf("Headed back to main thread.\n");
     return (void* )colBoard->result;
         
+}
+
+void * gridCheck(void * board){
+    sudokuBoard *gridBoard = (sudokuBoard *) board;
+        pthread_mutex_lock(&lock);
+
+    int gridSum = 0;
+
+    for(int i = (gridBoard->grid / 3); i < i + 3; i++){
+      for(int j = ((gridBoard->grid % 3) * 3); j < j + 3; j++){
+      gridSum += gridBoard->multiArray[i][j];
+    }
+}
+
+if(gridSum != 45){
+    gridBoard->result = false;
+    switch(gridBoard->grid){
+        case 1:
+            printf("Error in top left grid: %d\n", gridBoard->grid);
+            break;
+        case 2:
+            printf("Error in top middle grid: %d\n", gridBoard->grid);
+            break;
+        case 3:
+            printf("Error in top right grid: %d\n", gridBoard->grid);
+            break;
+        case 4:
+            printf("Error in middle left grid: %d\n", gridBoard->grid);
+            break;
+        case 5:
+            printf("Error in middle middle grid: %d\n", gridBoard->grid);
+            break;
+        case 6: 
+            printf("Error in middle right grid: %d\n", gridBoard->grid);
+            break;
+        case 7:
+            printf("Error in bottom left grid: %d\n", gridBoard->grid);
+            break;
+        case 8:
+            printf("Error in bottom middle grid: %d\n", gridBoard->grid);
+            break;
+        case 9:
+            printf("Error in bottom right grid: %d\n", gridBoard->grid);
+            break;
+
+    }
+}
+pthread_mutex_unlock(&lock);
+return (void * )gridBoard->result;
 }
 
 
