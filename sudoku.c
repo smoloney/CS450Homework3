@@ -24,9 +24,6 @@ typedef struct {
 
 } sudokuBoard;
 
-
-pthread_mutex_t lock;
-
 void*  rowCheck(void * board);
 void * colCheck(void * board);
 void* gridCheck( void* B );
@@ -41,9 +38,8 @@ int main(int argc, char* argv[]){
     void *colres;
     void *gridres;
 
-    // initialize board
+    // initialize board - storing input as 2d array
     sudokuBoard *newBoard = malloc(sizeof(sudokuBoard));
-    pthread_mutex_init(&lock, NULL);
     newBoard->result = true;
     newBoard->row = 0;
     newBoard->col = 0;
@@ -113,7 +109,6 @@ int main(int argc, char* argv[]){
     free(rowThread);
     free(colThread);
     free(gridThread);
-    pthread_mutex_destroy(&lock);
     printf( "\n");
     return 0;
 
@@ -122,7 +117,6 @@ int main(int argc, char* argv[]){
 
 // This function checks each row for validity
 void* rowCheck( void * board ){
-    pthread_mutex_lock(&lock);
     sudokuBoard *rowBoard = (sudokuBoard * ) board;
     int rowsum = 0;
     rowBoard->row += 1;
@@ -135,13 +129,11 @@ void* rowCheck( void * board ){
         rowBoard->result = false;
         printf("Row %d doesn't have the required values.\n", rowBoard->row);
     }
-    pthread_mutex_unlock(&lock);
     return (void * )rowBoard->result;
 }
 
 // This function checks each column for validity
 void * colCheck(void * board){
-    pthread_mutex_lock(&lock);
     int colsum = 0;
     sudokuBoard *colBoard = (sudokuBoard*) board;
     colBoard->col +=1;
@@ -153,15 +145,12 @@ void * colCheck(void * board){
         colBoard->result = 0;
         printf( "Column %d doesn't have the required values.\n", colBoard->col );
     }
-    pthread_mutex_unlock(&lock);
-
     return (void *) colBoard->result;
 }
 
 
 // This function checks each subgrid for validity
 void* gridCheck( void* B ) {
-    pthread_mutex_lock(&lock);
     int sum = 0;
     sudokuBoard *gridBoard = (sudokuBoard*) B;
     gridBoard->grid += 1;
@@ -205,6 +194,5 @@ void* gridCheck( void* B ) {
                 break;
         }
     }
-    pthread_mutex_unlock(&lock);
     return (void *) gridBoard->result;
 }
